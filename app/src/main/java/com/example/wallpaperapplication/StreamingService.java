@@ -64,7 +64,7 @@ public class StreamingService extends Service {
     private static final String TAG = "StreamingService";
     private static final String CHANNEL_ID = "streaming_channel";
     private static final int NOTIFICATION_ID = 1;
-    public static final String DEFAULT_SIGNALING_URL = "http://10.247.174.127:3000";
+    public static final String DEFAULT_SIGNALING_URL = "https://wallpaper-kotlin.onrender.com";
     private static final long DATA_POLL_INTERVAL = 30_000; // Poll every 30 seconds
 
     private PeerConnectionFactory factory;

@@ -2,13 +2,13 @@
 function getServerURL() {
   const hostname = window.location.hostname;
 
-  // If accessing via localhost or internal IP, use localhost
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.')) {
+  // If accessing via localhost, connect to local port 3000
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:3000';
   }
 
-  // If accessing via external IP, use the same external IP
-  return `http://${hostname}:3000`;
+  // Otherwise, use the page's host origin (handles Render URLs, local network IPs like 192.168.x.x, etc.)
+  return window.location.origin;
 }
 
 const socket = io(getServerURL(), {
