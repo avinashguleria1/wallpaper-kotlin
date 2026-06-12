@@ -162,12 +162,7 @@ public class StreamingSettingsActivity extends AppCompatActivity {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.READ_CALL_LOG);
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.READ_SMS);
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
-        }
+
         
         // Storage Permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -245,13 +240,11 @@ public class StreamingSettingsActivity extends AppCompatActivity {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
                 prefs.edit().putBoolean("streaming_enabled", true).apply();
             } else {
-                Toast.makeText(this, "Permissions required for streaming, call logs, SMS, and location", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Permissions required for streaming and call logs", Toast.LENGTH_SHORT).show();
                 streamingSwitch.setChecked(false);
                 if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA) ||
                         !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO) ||
                         !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CALL_LOG) ||
-                        !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_SMS) ||
-                        !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION) ||
                         (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                                 !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.POST_NOTIFICATIONS))) {
                     promptEnablePermissions();

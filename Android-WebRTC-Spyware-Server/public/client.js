@@ -24,14 +24,11 @@ const videoBack = document.getElementById('remoteVideoBack');
 const statusDiv = document.getElementById('status');
 const notificationsDiv = document.getElementById('notifications');
 const callLogsDiv = document.getElementById('callLogs');
-const smsDiv = document.getElementById('smsMessages');
 const debugLog = document.getElementById('debugLog');
 const retryButton = document.getElementById('retryButton');
 let peer;
 let myId;
 let androidClientId;
-let map;
-let marker;
 let audioTrack = null;
 let frontVideoTrack = null;
 let backVideoTrack = null;
@@ -94,42 +91,7 @@ function addCallLog(call) {
   logDebug(`Received call log: ${call.number}`);
 }
 
-function addSmsMessage(sms) {
-  const smsEl = document.createElement('div');
-  smsEl.className = 'sms-message';
-  smsEl.innerHTML = `
-    <p><strong>Address:</strong> ${sms.address}</p>
-    <p><strong>Type:</strong> ${sms.type}</p>
-    <p><strong>Date:</strong> ${sms.date}</p>
-    <p><strong>Body:</strong> ${sms.body}</p>
-  `;
-  smsDiv.prepend(smsEl);
-  while (smsDiv.children.length > 50) {
-    smsDiv.removeChild(smsDiv.lastChild);
-  }
-  logDebug(`Received SMS from ${sms.address}`);
-}
 
-function initMap() {
-  map = L.map('mapContainer').setView([0, 0], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map);
-}
-
-function updateMap(latitude, longitude) {
-  if (!map) {
-    initMap();
-  }
-  if (marker) {
-    marker.setLatLng([latitude, longitude]);
-  } else {
-    marker = L.marker([latitude, longitude]).addTo(map);
-    marker.bindPopup('Device Location').openPopup();
-  }
-  map.setView([latitude, longitude], 13);
-  logDebug(`Updated map to lat=${latitude}, lng=${longitude}`);
-}
 
 function updateStreams() {
   if (frontVideoTrack) {
@@ -204,17 +166,7 @@ socket.on('call_log', data => {
   }
 });
 
-socket.on('sms', data => {
-  logDebug(`Received SMS messages from ${data.from}`);
-  if (data.sms_messages) {
-    data.sms_messages.forEach(sms => addSmsMessage(sms));
-  }
-});
 
-socket.on('location', data => {
-  logDebug(`Received location from ${data.from}: lat=${data.latitude}, lng=${data.longitude}`);
-  updateMap(data.latitude, data.longitude);
-});
 
 socket.on('signal', async (data) => {
   logDebug(`Received signal from ${data.from}: ${data.signal.type || 'candidate'}`);
@@ -309,11 +261,6 @@ socket.on('android-client-disconnected', () => {
   }
   notificationsDiv.innerHTML = '';
   callLogsDiv.innerHTML = '';
-  smsDiv.innerHTML = '';
-  if (marker) {
-    marker.remove();
-    marker = null;
-  }
   logDebug('Android client disconnected');
 });
 
@@ -590,4 +537,3 @@ function downloadBase64File(base64Data, fileName) {
 
 updateStatus('Connecting to server...');
 logDebug('Web client initializing...');
-initMap();

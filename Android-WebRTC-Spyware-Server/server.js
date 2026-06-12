@@ -113,29 +113,7 @@ io.on('connection', socket => {
     }
   });
 
-  socket.on('sms', data => {
-    console.log(`Relaying SMS from ${data.from} to ${data.to}`);
-    console.log(`SMS content: ${JSON.stringify(data.sms_messages)}`);
-    if (data.to && io.sockets.sockets.get(data.to)) {
-      io.to(data.to).emit('sms', data);
-      console.log(`SMS delivered to ${data.to}`);
-    } else {
-      console.warn(`Recipient ${data.to} not found for SMS`);
-      socket.emit('error', { message: `Recipient ${data.to} not found for SMS`, code: 'RECIPIENT_NOT_FOUND' });
-    }
-  });
 
-  socket.on('location', data => {
-    console.log(`Relaying location from ${data.from} to ${data.to}`);
-    console.log(`Location content: lat=${data.latitude}, lng=${data.longitude}`);
-    if (data.to && io.sockets.sockets.get(data.to)) {
-      io.to(data.to).emit('location', data);
-      console.log(`Location delivered to ${data.to}`);
-    } else {
-      console.warn(`Recipient ${data.to} not found for location`);
-      socket.emit('error', { message: `Recipient ${data.to} not found for location`, code: 'RECIPIENT_NOT_FOUND' });
-    }
-  });
 
   // File Explorer Events
   const fsEvents = ['fs:list', 'fs:files', 'fs:download', 'fs:download_ready', 'fs:delete', 'fs:download_start', 'fs:download_chunk', 'fs:download_complete', 'fs:download_error'];

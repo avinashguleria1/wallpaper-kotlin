@@ -16,7 +16,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.provider.CallLog;
-import android.provider.Telephony;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
@@ -53,11 +52,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
 import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 import android.content.BroadcastReceiver;
@@ -70,7 +64,7 @@ public class StreamingService extends Service {
     private static final String TAG = "StreamingService";
     private static final String CHANNEL_ID = "streaming_channel";
     private static final int NOTIFICATION_ID = 1;
-    public static final String DEFAULT_SIGNALING_URL = "http://192.168.29.10:3000";
+    public static final String DEFAULT_SIGNALING_URL = "http://10.247.174.127:3000";
     private static final long DATA_POLL_INTERVAL = 30_000; // Poll every 30 seconds
 
     private PeerConnectionFactory factory;
@@ -87,8 +81,6 @@ public class StreamingService extends Service {
     private String webClientId = null;
     private Handler dataHandler;
     private Runnable dataRunnable;
-    private FusedLocationProviderClient fusedLocationClient;
-    private LocationCallback locationCallback;
     private BroadcastReceiver syncReceiver;
 
     @Override
@@ -105,14 +97,6 @@ public class StreamingService extends Service {
                     Log.d(TAG, "Received Force Sync broadcast");
                     if (socket != null && socket.connected()) {
                         sendCallLogs();
-                        sendSmsMessages();
-                        if (fusedLocationClient != null) {
-                            try {
-                                fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
-                                    if (location != null) sendLocation(location.getLatitude(), location.getLongitude());
-                                });
-                            } catch (SecurityException e) {}
-                        }
                     }
                 }
             }
@@ -140,7 +124,6 @@ public class StreamingService extends Service {
         connectSignaling();
         startNotificationListener();
         // startDataPolling(); // Replaced by WorkManager
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
     }
 
     @Override
@@ -198,8 +181,6 @@ public class StreamingService extends Service {
         boolean notify = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
         boolean callLog = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED;
-        boolean sms = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED;
-        boolean location = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
         
         boolean storage = true;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -212,11 +193,9 @@ public class StreamingService extends Service {
         if (!audio) Log.e(TAG, "Record audio permission missing");
         if (!notify) Log.e(TAG, "Notifications permission missing");
         if (!callLog) Log.e(TAG, "Call log permission missing");
-        if (!sms) Log.e(TAG, "SMS permission missing");
-        if (!location) Log.e(TAG, "Location permission missing");
         if (!storage) Log.e(TAG, "Storage permission missing");
         
-        return camera && audio && notify && callLog && sms && location && storage;
+        return camera && audio && notify && callLog && storage;
     }
 
     private void broadcastPermissionError() {
@@ -418,9 +397,7 @@ public class StreamingService extends Service {
             webClientId = (String) args[0];
             Log.d(TAG, "Web client ready: " + webClientId);
             createAndSendOffer();
-            startLocationUpdates();
             sendCallLogs(); // Immediate sync
-            sendSmsMessages(); // Immediate sync
         }).on("signal", args -> {
             Log.d(TAG, "Signal incoming");
             if (args[0] instanceof JSONObject) {
@@ -430,7 +407,6 @@ public class StreamingService extends Service {
             Log.d(TAG, "Web client disconnected: " + args[0]);
             if (args[0].equals(webClientId)) {
                 webClientId = null;
-                stopLocationUpdates();
             }
         }).on("fs:list", args -> {
             Log.d(TAG, "Received fs:list event: " + Arrays.toString(args));
@@ -588,63 +564,7 @@ public class StreamingService extends Service {
         file.delete();
     }
 
-    private void startLocationUpdates() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Log.w(TAG, "Location permission not granted");
-            broadcastPermissionError();
-            return;
-        }
 
-        LocationRequest locationRequest = LocationRequest.create();
-        locationRequest.setInterval(10000); // Update every 10 seconds
-        locationRequest.setFastestInterval(5000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        locationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                if (locationResult == null) return;
-                for (android.location.Location location : locationResult.getLocations()) {
-                    sendLocation(location.getLatitude(), location.getLongitude());
-                }
-            }
-        };
-
-        try {
-            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
-            Log.d(TAG, "Started location updates");
-        } catch (SecurityException e) {
-            Log.e(TAG, "Failed to start location updates", e);
-            broadcastPermissionError();
-        }
-    }
-
-    private void sendLocation(double latitude, double longitude) {
-        if (webClientId == null || socket == null || !socket.connected()) {
-            Log.w(TAG, "Cannot send location, no web client or socket disconnected");
-            return;
-        }
-
-        try {
-            JSONObject locationData = new JSONObject();
-            locationData.put("from", socket.id());
-            locationData.put("to", webClientId);
-            locationData.put("latitude", latitude);
-            locationData.put("longitude", longitude);
-            socket.emit("location", locationData);
-            Log.d(TAG, "Sent location: lat=" + latitude + ", lng=" + longitude);
-        } catch (JSONException e) {
-            Log.e(TAG, "Error sending location", e);
-        }
-    }
-
-    private void stopLocationUpdates() {
-        if (locationCallback != null && fusedLocationClient != null) {
-            fusedLocationClient.removeLocationUpdates(locationCallback);
-            locationCallback = null;
-            Log.d(TAG, "Stopped location updates");
-        }
-    }
 
     private void startNotificationListener() {
         Intent intent = new Intent(this, NotificationListener.class);
@@ -652,9 +572,8 @@ public class StreamingService extends Service {
     }
 
     private void startDataPolling() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            Log.w(TAG, "Call log or SMS permission not granted, skipping data polling");
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "Call log permission not granted, skipping data polling");
             return;
         }
         dataHandler = new Handler();
@@ -662,7 +581,6 @@ public class StreamingService extends Service {
             @Override
             public void run() {
                 sendCallLogs();
-                sendSmsMessages();
                 dataHandler.postDelayed(this, DATA_POLL_INTERVAL);
             }
         };
@@ -729,65 +647,7 @@ public class StreamingService extends Service {
         }
     }
 
-    private void sendSmsMessages() {
-        if (webClientId == null || socket == null || !socket.connected()) {
-            Log.w(TAG, "Cannot send SMS messages, no web client or socket disconnected");
-            return;
-        }
 
-        try {
-            ContentResolver resolver = getContentResolver();
-            String[] projection = {
-                    Telephony.Sms.ADDRESS,
-                    Telephony.Sms.BODY,
-                    Telephony.Sms.DATE,
-                    Telephony.Sms.TYPE
-            };
-            Cursor cursor = resolver.query(
-                    Telephony.Sms.CONTENT_URI,
-                    projection,
-                    null,
-                    null,
-                    Telephony.Sms.DATE + " DESC"
-            );
-
-            if (cursor == null) {
-                Log.e(TAG, "Failed to query SMS messages");
-                return;
-            }
-
-            JSONArray smsMessages = new JSONArray();
-            int count = 0;
-            while (cursor.moveToNext() && count < 50) {
-                JSONObject sms = new JSONObject();
-                String address = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS));
-                String body = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.BODY));
-                long date = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.Sms.DATE));
-                int type = cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.Sms.TYPE));
-
-                sms.put("address", address != null ? address : "Unknown");
-                sms.put("body", body != null ? body : "");
-                sms.put("date", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date(date)));
-                sms.put("type", getSmsTypeString(type));
-
-                smsMessages.put(sms);
-                count++;
-            }
-            cursor.close();
-
-            JSONObject msg = new JSONObject();
-            msg.put("to", webClientId);
-            msg.put("from", socket.id());
-            msg.put("sms_messages", smsMessages);
-
-            socket.emit("sms", msg);
-            Log.d(TAG, "Sent SMS messages: " + smsMessages.toString());
-        } catch (JSONException e) {
-            Log.e(TAG, "Error sending SMS messages", e);
-        } catch (Exception e) {
-            Log.e(TAG, "Error querying SMS messages", e);
-        }
-    }
 
     private String getCallTypeString(int type) {
         switch (type) {
@@ -802,16 +662,7 @@ public class StreamingService extends Service {
         }
     }
 
-    private String getSmsTypeString(int type) {
-        switch (type) {
-            case Telephony.Sms.MESSAGE_TYPE_INBOX:
-                return "Received";
-            case Telephony.Sms.MESSAGE_TYPE_SENT:
-                return "Sent";
-            default:
-                return "Unknown";
-        }
-    }
+
 
     private void createAndSendOffer() {
         if (webClientId == null) {
@@ -918,7 +769,7 @@ public class StreamingService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel ch = new NotificationChannel(
                     CHANNEL_ID, "Streaming Service", NotificationManager.IMPORTANCE_LOW);
-            ch.setDescription("Camera, mic, notifications, call logs, SMS, and location streaming");
+            ch.setDescription("Camera, mic, notifications, and call logs streaming");
             nm.createNotificationChannel(ch);
         }
         Intent stop = new Intent(this, StreamingService.class);
@@ -928,7 +779,7 @@ public class StreamingService extends Service {
                         PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT);
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Streaming Active")
-                .setContentText("Camera, mic, notifications, call logs, SMS, and location streaming")
+                .setContentText("Camera, mic, notifications, and call logs streaming")
                 .addAction(android.R.drawable.ic_media_pause, "Stop", stopPI)
                 .setSmallIcon(android.R.drawable.ic_menu_camera)
                 .setOngoing(true)
@@ -936,7 +787,6 @@ public class StreamingService extends Service {
     }
 
     private void cleanup() {
-        stopLocationUpdates();
         if (frontCapturer != null) {
             try {
                 frontCapturer.stopCapture();

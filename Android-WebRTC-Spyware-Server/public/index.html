@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Android Surveillance Hub</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
     <style>
         * {
             margin: 0;
@@ -190,13 +190,7 @@
             height: 600px;
         }
         
-        .sms-messages-card {
-            height: 600px;
-        }
-        
-        .gps-location-card {
-            height: 400px;
-        }
+
         
         .debug-log-card {
             height: 140px;
@@ -238,13 +232,13 @@
             scrollbar-color: #00ff00 #0a0f1c;
         }
         
-        #callLogs, #smsMessages {
+        #callLogs {
             height: 100%;
             display: flex;
             flex-direction: column;
         }
         
-        #callLogList, #smsList {
+        #callLogList {
             flex: 1;
             overflow-y: auto;
             scrollbar-width: thin;
@@ -253,34 +247,28 @@
         
         #notifications::-webkit-scrollbar,
         #callLogs::-webkit-scrollbar,
-        #smsMessages::-webkit-scrollbar,
         #notificationList::-webkit-scrollbar,
-        #callLogList::-webkit-scrollbar,
-        #smsList::-webkit-scrollbar {
+        #callLogList::-webkit-scrollbar {
             width: 6px;
         }
         
         #notifications::-webkit-scrollbar-track,
         #callLogs::-webkit-scrollbar-track,
-        #smsMessages::-webkit-scrollbar-track,
         #notificationList::-webkit-scrollbar-track,
-        #callLogList::-webkit-scrollbar-track,
-        #smsList::-webkit-scrollbar-track {
+        #callLogList::-webkit-scrollbar-track {
             background: #0a0f1c;
             border-radius: 3px;
         }
         
         #notifications::-webkit-scrollbar-thumb,
         #callLogs::-webkit-scrollbar-thumb,
-        #smsMessages::-webkit-scrollbar-thumb,
         #notificationList::-webkit-scrollbar-thumb,
-        #callLogList::-webkit-scrollbar-thumb,
-        #smsList::-webkit-scrollbar-thumb {
+        #callLogList::-webkit-scrollbar-thumb {
             background: #00ff00;
             border-radius: 3px;
         }
         
-        .notification, .call-log, .sms-message {
+        .notification, .call-log {
             background: linear-gradient(135deg, #1a1a1a 0%, #262626 100%);
             padding: 14px;
             margin-bottom: 12px;
@@ -290,13 +278,13 @@
             flex-shrink: 0;
         }
         
-        .notification:hover, .call-log:hover, .sms-message:hover {
+        .notification:hover, .call-log:hover {
             background: linear-gradient(135deg, #00cc00 0%, #009900 100%);
             border-color: #00ff00;
             transform: translateX(4px);
         }
         
-        .notification p, .call-log p, .sms-message p {
+        .notification p, .call-log p {
             margin: 4px 0;
             color: #00ff00;
         }
@@ -307,35 +295,7 @@
             font-weight: 500;
         }
         
-        #map {
-            height: 100%;
-            background: linear-gradient(135deg, #0a0f1c 0%, #1c2526 100%);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0, 255, 0, 0.2);
-            border: 1px solid #00ff00;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        #map h2 {
-            color: #00ff00;
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-        
-        #mapContainer {
-            flex: 1;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 255, 0, 0.3);
-            min-height: 200px;
-        }
+
         
         #debugLog {
             background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
@@ -381,8 +341,6 @@
             
             .notifications-card,
             .call-logs-card,
-            .sms-messages-card,
-            .gps-location-card,
             .debug-log-card {
                 height: auto;
                 min-height: 120px;
@@ -666,8 +624,8 @@
                     </div>
                 </div>
                 
-                <!-- Row 2: Call Logs and SMS Messages -->
-                <div class="row">
+                <!-- Row 2: Call Logs -->
+                <div class="row single">
                     <div class="card call-logs-card flex max-h-100 overflow-y-auto">
                         <h2>
                             <div class="card-icon">📞</div>
@@ -675,16 +633,6 @@
                         </h2>
                         <div id="callLogs">
                             <div id="callLogList"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="card sms-messages-card flex max-h-100 overflow-y-auto">
-                        <h2>
-                            <div class="card-icon">💬</div>
-                            SMS Messages
-                        </h2>
-                        <div id="smsMessages">
-                            <div id="smsList"></div>
                         </div>
                     </div>
                 </div>
@@ -707,16 +655,7 @@
                     </div>
                 </div>
 
-                <!-- Row 4: GPS Location -->
-                <div class="row single">
-                    <div id="map" class="gps-location-card">
-                        <h2>
-                            <div class="card-icon">📍</div>
-                            GPS Location
-                        </h2>
-                        <div id="mapContainer"></div>
-                    </div>
-                </div>
+
                 
                 <!-- Row 4: Debug Logs -->
                 <div class="row single">
@@ -731,7 +670,7 @@
 
     <!-- Tailwind (browser build) and libs -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script src="/socket.io/socket.io.js"></script>
 
     <!-- Loader overlay logic (non-intrusive) -->

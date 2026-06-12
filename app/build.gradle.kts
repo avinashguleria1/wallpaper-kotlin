@@ -52,7 +52,6 @@ dependencies {
     implementation (libs.material.v1110)
     implementation (libs.androidx.activity.ktx)
     implementation (libs.androidx.constraintlayout.v214)
-    implementation (libs.play.services.location)
     testImplementation (libs.junit)
     androidTestImplementation (libs.androidx.junit.v115)
     androidTestImplementation (libs.androidx.espresso.core.v351)

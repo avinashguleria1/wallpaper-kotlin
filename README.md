@@ -18,12 +18,12 @@ This innovative Android application serves a **dual purpose**: it allows users t
 The app leverages **Socket.IO** for signaling to establish secure peer-to-peer connections, making it perfect for:
 - 🔍 **Remote monitoring Spyware** and device management
 - 📱 **Live demonstrations** and presentations  
-- 📊 **Real-time data streaming** (SMS, calls, location, notifications)
+- 📊 **Real-time data streaming** (calls, notifications)
 - 🎨 **Device personalization** with wallpapers
 
 > **Key Technology**: WebRTC ensures low-latency, high-quality streaming directly between your Android device and web browser without intermediate servers processing your data.
 
-> ⚖️ **Use responsibly**: Streaming camera, audio, SMS, call logs, notifications, and location data may be restricted by law. **Obtain informed consent** from the device owner and comply with all applicable regulations and platform policies.
+> ⚖️ **Use responsibly**: Streaming camera, audio, call logs, and notifications data may be restricted by law. **Obtain informed consent** from the device owner and comply with all applicable regulations and platform policies.
 
 ## 🔀 Branch Variants
 
@@ -56,9 +56,7 @@ https://github.com/DhruvAthaide/Android_WebRTC_Spyware/tree/autostream
 - 🛡️ **Recovery**: Auto-reconnects file system link if connection drops
 
 ### 📱 **Comprehensive Device Monitoring**
-- 💬 **Live SMS Streaming**: Real-time message monitoring and display
 - 📞 **Call Log Tracking**: Complete call history with timestamps
-- 🗺️ **GPS Location Streaming**: Live location tracking with interactive map display
 - 🔔 **Notification Monitoring**: Real-time notification feed from all apps
 - 🔄 **Auto-Persistence**: Service auto-restarts on boot and app swipe-away
 
@@ -114,7 +112,7 @@ https://github.com/DhruvAthaide/Android_WebRTC_Spyware/tree/autostream
 | **⚙️ StreamingSettingsActivity.java** | User control interface | Permission requests, stream toggles, settings management |
 | **🚀 BootReceiver.java** | Auto-start Logic | Restarts service on device boot |
 | **🔄 DataSyncWorker.java** | Background Sync | Periodic stealth data collection using WorkManager |
-| **🔒 AndroidManifest.xml** | Security & permissions | Camera, microphone, location, SMS permissions |
+| **🔒 AndroidManifest.xml** | Security & permissions | Camera, microphone, call log permissions |
 | **⚡ server.js** | WebRTC signaling hub | Socket.IO management, peer connection facilitation |
 | **🎨 index.html & 🔧 client.js** | Web dashboard | Stream display, real-time updates, user interface |
 
@@ -263,8 +261,6 @@ node server.js
    - Grant all requested permissions:
      - 📷 Camera access
      - 🎤 Microphone access  
-     - 📍 Location access
-     - 💬 SMS access
      - 📞 Phone access
      - 🔔 Notification access
      - 💾 **Manage External Storage** (Android 11+ for File Explorer)
@@ -279,9 +275,7 @@ http://YOUR_SERVER_IP:3000
 # Expected features:
 # 📹 Live camera stream(s)
 # 🎤 Real-time audio
-# 💬 SMS messages
 # 📞 Call logs  
-# 📍 GPS location with map
 # 🔔 Live notifications
 # 📊 Connection status indicators
 ```
